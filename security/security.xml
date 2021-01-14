@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data noupdate="0">
+
+    <!--Group for torgovik -->
+    <record id="group_sales_representative" model="res.groups">
+        <field name="name">Sales Representative</field>
+        <field name="comment">Torgovik group</field>
+        <!-- inherit Employee group of base  -->
+        <!-- field name="implied_ids" eval="[(4, ref('base.group_user'))]"/-->
+    </record>
+    
+    <!-- rule to list companies for curr torgovik  (since torgovik in 'portal' role - default role for external users, all partners are hidden for
+     him, that's why need to write a rule) -->
+    <!-- record id="res_partner_list_for_torgovik_rule" model="ir.rule">
+	    <field name="name">res_partner list for torgovik rule</field>
+	    <field name="model_id" ref="base.model_res_partner"/>
+	    <field name="domain_force">[('torgovik', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_sales_representative'))]"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="perm_write" eval="True"/>	    
+    </record-->
+    
+    <!-- record id="sale_order_list_for_torgovik_rule" model="ir.rule">
+	    <field name="name">sale_order list for torgovik rule</field>
+	    <field name="model_id" ref="sale.model_sale_order"/>
+	    <field name="domain_force">[('torgovik', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_sales_representative'))]"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="perm_write" eval="True"/>	    
+    </record-->    
+</data>
+</openerp>

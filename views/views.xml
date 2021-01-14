@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <data>
+  
+    	<!-- assets_backend     -->
+        <template id="assets_backend" name="baron_sales_representative assets" inherit_id="web.assets_backend">
+            <xpath expr="." position="inside">
+                <script type="text/javascript" src="/baron_sales_representative/static/src/js/graph-ext.js"></script>
+            </xpath>
+        </template>
+        
+  		<!-- 2nd menu      -->
+  		<!-- (res_partner) -->
+  		
+        <record model="ir.ui.view" id="view_res_partner_tree">
+            <field name="name">res.partner.tree</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <tree create="false">
+                    <field name="name" bg_color="#ffff1a:is_two_periods_overdued == False;#ff1a1a:is_two_periods_overdued == True" />
+                    <field name="is_two_periods_overdued" invisible="True"/>
+                    <field name="phone" />
+                    <field name="email"></field>
+                </tree>
+            </field>
+        </record>   		
+  		
+        <record id="action_show_clients" model="ir.actions.act_window">
+            <field name="name">Отчет по дебеторке</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="view_res_partner_tree"/>            
+            <!-- uid = userId, is_in_debet implemented in overriden search since not stored not poss to use in domain -->
+            <field name="domain">[('torgovik', '=', uid)]</field>
+            <field name="context">{ 'search_default_month':1, 'is_debet_only_search':1}</field>
+            <!-- field name="filter" eval="True"/-->
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Нажмите чтобы создать дочернего торгового представителя.
+              </p><p>
+				Многоуровневая система торговых представителей
+				позволяет получать % с личных продаж и % с продаж нижестоящих
+				торговых представителей
+              </p>
+            </field>
+        </record>
+        
+  		<!-- 1st menu     -->
+  		<!-- (sale_order) -->        
+        <!-- record model="ir.ui.view" id="view_sale_order_tree">
+            <field name="name">sale.order.tree</field>
+            <field name="model">sale.order</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name" bg_color="#00b300:is_outdated == False;#ff1a1a:is_outdated == True"/>
+                    <field name="is_outdated" invisible="True"/>
+                    <field name="partner_id" select="1" />
+                    <field name="date_order" select="1" />
+                    <field name="state" />
+                    <field name="amount_total" sum="Total amount"></field>
+                    <field name="dolg" sum="Total amount"></field>
+                </tree>
+            </field>
+        </record>      
+        
+        <record model="ir.ui.view" id="view_sale_order_search">
+            <field name="name">sale.order.search</field>
+            <field name="model">sale.order</field>
+            <field name="arch" type="xml">
+                <search string="Tables Detail">
+                    <field name="partner_id" />
+                    <field name="name" />
+                    <group expand="0" string="Group By">
+                        <filter string="Месяц" domain="[]"
+                            context="{'group_by':'date_order'}" />
+                        <filter name="partner_id" string="Customer"
+                            icon="terp-stock_symbol-selection" context="{'group_by':'partner_id'}" />
+                    </group>
+                </search>
+            </field>
+        </record-->
+        
+    <record id="view_sale_order_graph" model="ir.ui.view">
+         <field name="name">baron.partners.report.graph</field>
+         <field name="model">baron.partners.report</field>
+         <field name="arch" type="xml">
+             <graph string="Partners" type="pivot" stacked="True">
+	             <field name="is_overdued" type="row"/>
+                 <field name="partner_id" type="row"/>
+                 <field name="date_order" interval="month" type="col"/>
+                 <field name="sum" type="measure"/>
+                 <field name="debet_amount" type="measure"/>                 
+                 <field name="reward" type="measure"/>
+             </graph>
+         </field>
+    </record>
+    <record id="view_sale_order_search" model="ir.ui.view">
+        <field name="name">baron.partners.search</field>
+        <field name="model">baron.partners.report</field>
+        <field name="arch" type="xml">
+            <search string="Sales Analysis">
+
+                <filter string="This Year" name="year" invisible="1" domain="[('date_order','&lt;=', time.strftime('%%Y-12-31')),('date_order','&gt;=',time.strftime('%%Y-01-01'))]"/>
+                <!-- filter string="My Sales" help="My Sales"  domain="[('user_id','=',uid)]"/-->
+                <field name="partner_id"/>
+                <!-- field name="user_id"/-->
+
+                <group expand="0" string="Group By">
+                    <filter string="Юр лицо" name="Customer" invisible="1" context="{'group_by':'partner_id'}"/>
+                    <separator/>
+                    <filter string="Месяц" context="{'group_by':'date_order:month'}" />
+                </group>
+            </search>
+        </field>
+    </record>      
+    <record id="action_show_orders" model="ir.actions.act_window">
+        <field name="name">Отчет по клиентам</field>
+        <field name="res_model">baron.partners.report</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">graph</field>
+        <field name="domain">[('user_id', '=', uid)]</field>
+        <field name="search_view_id" ref="view_sale_order_search"/>
+        <field name="view_id" ref="view_sale_order_graph"/>
+        <field name="context">{ 'group_by_no_leaf':1,'group_by':[], 'baron_torgovik_report':1   }</field>
+		<field name="help" type="html">
+			<p>На данный момент у вас нет клиентов. Пожалуйста, обратитесь к администратору</p>
+		</field> 
+    </record>          
+        
+        <!-- record id="action_show_orders" model="ir.actions.act_window">
+            <field name="name">Отчет по клиентам</field>
+            <field name="res_model">sale.order</field>
+
+            <field name="view_type">form</field>
+            <field name="view_mode">tree</field>
+            <field name="domain">[('torgovik', '=', uid)]</field>
+            <field name="view_id" ref="view_sale_order_graph"/>
+            <field name="search_view_id" ref="view_sale_order_search"/>
+			<field name="help" type="html">
+				<p>На данный момент у вас нет клиентов. Пожалуйста, обратитесь к администратору</p>
+			</field>            
+        </record-->        
+        
+        <!-- 3 menu. Indicators     -->
+  		<!-- (res_partner) 			-->
+        <record model="ir.ui.view" id="view_res_partner_tree_indic">
+            <field name="name">res.partner.tree</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <tree create="false">
+                    <field name="name" />
+                    <field name="phone" />
+                    <field name="email"></field>
+                </tree>
+            </field>
+        </record>     		
+  		
+        <record id="action_show_indicators" model="ir.actions.act_window">
+            <field name="name">Отчет по индикатору вызова</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="view_res_partner_tree_indic"/>
+            <!-- uid = userId -->
+            <field name="domain">[('is_called', '=', True), ('torgovik', '=', uid)]</field>
+            <field name="context">{'default_customer':1, 'search_default_customer':1}</field>
+            <!-- field name="filter" eval="True"/-->
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Нажмите чтобы создать дочернего торгового представителя.
+              </p><p>
+				Многоуровневая система торговых представителей
+				позволяет получать % с личных продаж и % с продаж нижестоящих
+				торговых представителей
+              </p>
+            </field>
+        </record>
+        
+        <!-- 4 menu. My sub torgoviki     -->
+  		<!-- (res_partner) 			-->
+        <record id="action_show_my_subs" model="ir.actions.act_window">
+            <field name="name">Мои торговые представители</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">res.users</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <!-- uid = userId -->
+            <field name="domain">[('parent_torgovik', '=', uid)]</field>
+            <field name="context">{'default_customer':1, 'search_default_customer':1, 'is_my_subs':1}</field>
+            <!-- field name="filter" eval="True"/-->
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Нажмите чтобы создать дочернего торгового представителя.
+              </p><p>
+				Многоуровневая система торговых представителей
+				позволяет получать % с личных продаж и % с продаж нижестоящих
+				торговых представителей
+              </p>
+            </field>
+        </record>        
+   		
+        <menuitem id="torgovik_top_menu" name="Торговый представитель" groups="group_sales_representative"
+             />        
+        
+        <!-- groups="group_sales_representative" -->
+ 	  	<menuitem name="Торговый представитель" id="torgovik_clients"
+  			parent="torgovik_top_menu" />
+  			
+ 	  	<menuitem name="Отчет по клиентам" id="torgovik_sale_orders_submenu" action="action_show_orders"
+  			parent="torgovik_clients" sequence="10" />    			
+  			
+ 	  	<menuitem name="Отчет по дебеторке" id="torgovik_clients_submenu" action="action_show_clients"
+  			parent="torgovik_clients" sequence="20" />  	
+  			
+ 	  	<menuitem name="Отчет по индикатору вызова" id="torgovik_indicator_submenu" action="action_show_indicators"
+  			parent="torgovik_clients" sequence="30" />    
+  			
+ 	  	<menuitem name="Мои представители" id="torgovik_my_subs_submenu" action="action_show_my_subs"
+  			parent="torgovik_clients" sequence="40" />    						
+  			
+  		<!-- form extension for admin (and others)  -->
+		<record id="baron_torgovik_partner_form" model="ir.ui.view">
+			<field name="name">res.partner.torgovik</field>
+			<field name="model">res.partner</field>
+			<field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <field name="title" position="after">
+                    <field name="is_called" attrs="{'invisible': [('torgovik', '&lt;', 1)]}"/>
+                    <field name="torgovik" invisible="True"></field>
+                </field>
+            </field>
+		</record>  
+		<record id="baron_torgovik_partner_form2" model="ir.ui.view">
+			<field name="name">res.partner.torgovik2</field>
+			<field name="model">res.partner</field>
+			<field name="inherit_id" ref="baron_sales_representative.baron_torgovik_partner_form"/>
+            <!-- group_system - admin/settings group  -->
+            <field name="groups_id" eval="[(6,0, [ref('base.group_system')])]"/>
+            <field name="arch" type="xml">
+                <field name="title" position="after">
+                    <field name="torgovik" attrs="{'invisible': [('is_company', '=', False)]}"/>
+                </field>
+            </field>
+		</record>  		
+        <record id="view_users_form_baron_torgovik" model="ir.ui.view">
+            <field name="name">res.users.form.baron.torgovik</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_form"/>
+            <field name="arch" type="xml">
+                <field name="partner_id" position="after">
+                    <field name="region_id"/>
+                    <field name="parent_torgovik"/>
+                </field>
+            </field>
+        </record>			
+		
+		<!-- partner form restrictions for torgovik group -->
+		<record id="baron_torgovik_partner_form_restricted" model="ir.ui.view">
+			<field name="name">res.partner.torgovik_restricted</field>
+			<field name="model">res.partner</field>
+			<field name="inherit_id" ref="baron_res_partner.view_partner_kladdr_form"/>
+            <field name="groups_id" eval="[(6, 0, [ref('baron_sales_representative.group_sales_representative') ])]" />			
+            <field name="arch" type="xml">
+      
+                <field name="image" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>              
+                <field name="is_company" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>
+                <!-- company user belongs to -->
+                <field name="parent_id" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>
+                <!-- tags field -->
+                <field name="category_id" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>                  
+                <field name="name" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field> 
+                <field name="country_id" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>                
+                <field name="street" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>
+                <field name="street2" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>                
+                <field name="city" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field> 
+                <field name="district" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>
+                <field name="house" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>  
+                <field name="zip" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>  
+                <field name="state_id_kladr" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field> 
+                <field name="office" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field> 
+                <field name="website" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>                 
+                
+                <!-- function = job position -->
+                <field name="function" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>                
+                <field name="phone" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>
+                <field name="mobile" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field> 
+                <field name="fax" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>
+                <field name="email" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>  
+                <field name="zip" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>  
+                <field name="title" position="attributes">
+                   <attribute name="readonly">1</attribute>                   
+                </field>                  
+				
+				<xpath expr="//page[@name='sales_purchases']" position="attributes">	
+	                 <attribute name='invisible'>1</attribute> 
+	            </xpath>
+				<xpath expr="//page[@name='internal_notes']" position="attributes">	
+	                 <attribute name='invisible'>1</attribute> 
+	            </xpath>	
+	            <xpath expr="//page[@string='Addresses']" position="attributes">	
+	                 <attribute name='invisible'>1</attribute> 
+	            </xpath>
+            </field>
+		</record>  
+		<record id="baron_torgovik_partner_form_restricted_pos" model="ir.ui.view">
+			<field name="name">res.partner.torgovik_restricted_pos</field>
+			<field name="model">res.partner</field>
+			<field name="inherit_id" ref="point_of_sale.view_partner_property_form"/>
+            <field name="groups_id" eval="[(6, 0, [ref('baron_sales_representative.group_sales_representative') ])]" />			
+            <field name="arch" type="xml">
+	            <xpath expr="//page[@string='Point of Sale']" position="attributes">	
+	                 <attribute name='invisible'>1</attribute> 
+	            </xpath>	  		
+            </field>
+		</record>
+		<record id="baron_torgovik_partner_form_restricted_warning" model="ir.ui.view">
+			<field name="name">res.partner.torgovik_restricted_warnings</field>
+			<field name="model">res.partner</field>
+			<field name="inherit_id" ref="warning.view_partner_warning_form"/>
+            <field name="groups_id" eval="[(6, 0, [ref('baron_sales_representative.group_sales_representative') ])]" />			
+            <field name="arch" type="xml">
+	            <xpath expr="//page[@string='Warnings']" position="attributes">	
+	                 <attribute name='invisible'>1</attribute> 
+	            </xpath>	  		
+            </field>
+		</record> 	
+		
+		<!-- Regions views -->
+		<record id="view_baron_region_line_tree" model="ir.ui.view">
+            <field name="name">baron.region.line.tree</field>
+            <field name="model">baron.region.line</field>
+            <field name="arch" type="xml">
+                <tree string="Уровени региона">
+                    <field name="level_num"/>
+                    <field name="percent"/>
+                </tree>
+            </field>
+        </record>
+        <record id="view_baron_region_line_form" model="ir.ui.view">
+            <field name="name">baron.region.line.form</field>
+            <field name="model">baron.region.line</field>
+            <field name="arch" type="xml">
+                <form string="Уровень региона">
+                    <group>
+                    	<field name="id" invisible="1"/>
+                        <group string="Номер уровня" attrs="{'invisible':[('id','&lt;', 1)]}">
+                            <field name="level_num"/>
+                        </group>
+                        <group string="Процент">
+                            <field name="percent"/>
+                        </group>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <!-- record id="view_payment_term_search" model="ir.ui.view">
+            <field name="name">account.payment.term.search</field>
+            <field name="model">account.payment.term</field>
+            <field name="arch" type="xml">
+                <search string="Payment Term">
+                    <field name="name" string="Payment Term"/>
+                    <field name="active"/>
+                </search>
+            </field>
+        </record-->
+        <record id="view_payment_term_form" model="ir.ui.view">
+            <field name="name">Регион</field>
+            <field name="model">baron.region</field>
+            <field name="arch" type="xml">
+                <form string="Название региона">
+                    <group col="4">
+                        <field name="name" colspan="4"/>
+                        <field name="level_max"/>
+                    </group>
+                    <separator string="Уровни региона"/>
+                    <field name="line_ids"/>
+                </form>
+            </field>
+        </record>
+        <record id="action_regions_form" model="ir.actions.act_window">
+            <field name="name">Регионы</field>
+            <field name="res_model">baron.region</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <!-- field name="search_view_id" ref="view_payment_term_search"/-->
+        </record>
+        <menuitem action="action_regions_form"
+            id="menu_action_regions_form" parent="account.menu_configuration_misc" sequence="101"/>
+  			
+  </data>
+</openerp>

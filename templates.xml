@@ -1,0 +1,13 @@
+<openerp>
+    <data>
+    	<!-- in this template only custom group appended -->
+        <template id="web.webclient_bootstrap_custom" name="Webclient Bootstrap - Torgovik" inherit_id="web.webclient_bootstrap">
+            <xpath expr="//nav[@id='oe_main_menu_navbar']" position="attributes">
+                <attribute name="groups">base.group_user,base.group_portal,baron_sales_representative.group_sales_representative</attribute>
+            </xpath>
+            <xpath expr="//div[@class='openerp openerp_webclient_container']//div" position="attributes">
+                <attribute name="groups">base.group_user,base.group_portal,baron_sales_representative.group_sales_representative</attribute>
+            </xpath>
+        </template>
+    </data>
+</openerp>
